@@ -1,23 +1,100 @@
 (() => {
   "use strict";
-  const SESSION_KEY = "ielts-cloze-cloud-session-v1";
   const API = location.hostname.endsWith("github.io") ? "https://ielts-cloze-lab.woodsy-mint-9620.chatgpt.site" : "";
-  let session = readSession(), timer = null, syncing = false;
-  function readSession(){try{const s=JSON.parse(localStorage.getItem(SESSION_KEY)||"null");return s&&typeof s.vaultId==="string"&&typeof s.token==="string"?s:null}catch{return null}}
-  function saveSession(value){session=value;if(value)localStorage.setItem(SESSION_KEY,JSON.stringify(value));else localStorage.removeItem(SESSION_KEY)}
-  async function request(path,options={}){const headers=Object.assign({"content-type":"application/json"},options.headers||{});if(session?.token)headers.authorization=`Bearer ${session.token}`;const response=await fetch(API+path,Object.assign({},options,{headers})),data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||"云端连接失败。");return data}
-  function esc(value){const n=document.createElement("span");n.textContent=value;return n.innerHTML}
-  function note(value,bad=false){const n=document.getElementById("cloudMessage");if(n){n.textContent=value||"";n.classList.toggle("bad",bad)}}
-  function current(){return window.IELTSCloud?.getState?.()||null}
-  function refresh(){const status=document.getElementById("cloudStatus"),create=document.getElementById("cloudCreate"),login=document.getElementById("cloudLogin"),connected=document.getElementById("cloudConnected"),button=document.getElementById("cloudSyncButton");if(!status)return;if(session){const identity=session.accountName?`同步帐号：<code>${esc(session.accountName)}</code>`:`旧同步 ID：<code>${esc(session.vaultId)}</code>`;status.innerHTML=`<span class="cloud-dot online"></span><div><b>已登录并连接云端词库</b><small>${identity}</small></div>`;create.hidden=true;login.hidden=true;connected.hidden=false;button?.classList.add("connected")}else{status.innerHTML='<span class="cloud-dot"></span><div><b>尚未登录</b><small>登录后可在任何设备继续学习。</small></div>';create.hidden=false;login.hidden=false;connected.hidden=true;button?.classList.remove("connected")}}
-  function merge(local,remote){if(!local)return remote;if(!remote)return local;const preferLocal=Number(local.updatedAt||0)>=Number(remote.updatedAt||0),cards=new Map();[...(remote.cards||[]),...(local.cards||[])].forEach((c,index)=>{const key=String(c.id||c.word||"").toLowerCase(),old=cards.get(key),localCard=index>=(remote.cards||[]).length;if(!old||Number(c.updatedAt||0)>Number(old.updatedAt||0)||(Number(c.updatedAt||0)===Number(old.updatedAt||0)&&localCard===preferLocal))cards.set(key,c)});const newest=preferLocal?local:remote;return Object.assign({},remote,local,newest,{cards:[...cards.values()],updatedAt:Date.now()})}
-  async function register(){const accountName=document.getElementById("cloudAccountName").value.trim(),passphrase=document.getElementById("cloudNewPass").value,state=current();if(!state)return note("学习页面仍在初始化，请稍后再试。",true);if(!/^[a-z][a-z0-9_.-]{2,31}$/i.test(accountName))return note("请输入 3–32 位的同步帐号，以字母开头。",true);if(passphrase.length<10)return note("同步口令至少需要 10 个字符。",true);note("正在创建同步帐号…");try{const d=await request("/api/v1/register",{method:"POST",body:JSON.stringify({accountName,passphrase,state})});saveSession({vaultId:d.vaultId,accountName:d.accountName,token:d.token});document.getElementById("cloudNewPass").value="";refresh();note("帐号已创建。新设备只需输入同步帐号和同一组口令。")}catch(e){note(e.message,true)}}
-  async function login(){const identity=document.getElementById("cloudLoginName").value.trim(),passphrase=document.getElementById("cloudPass").value;if(!identity||passphrase.length<10)return note("请输入同步帐号和至少 10 个字符的口令。",true);note("正在登录云端词库…");try{const credentials=identity.startsWith("vault_")?{vaultId:identity,passphrase}:{accountName:identity,passphrase};const d=await request("/api/v1/login",{method:"POST",body:JSON.stringify(credentials)});saveSession({vaultId:d.vaultId,accountName:d.accountName||undefined,token:d.token});const state=merge(current(),d.state);window.IELTSCloud.replaceState(state);await request("/api/v1/state",{method:"PUT",body:JSON.stringify({state})});document.getElementById("cloudPass").value="";refresh();note("已登录并合并本设备词库。之后的修改会自动同步。")}catch(e){note(e.message,true)}}
-  async function pull(){if(!session)return;note("正在获取云端词库…");try{const d=await request("/api/v1/state",{method:"GET"}),state=merge(current(),d.state);window.IELTSCloud.replaceState(state);await request("/api/v1/state",{method:"PUT",body:JSON.stringify({state})});note("同步完成。")}catch(e){if(/会话已失效/.test(e.message))saveSession(null);refresh();note(e.message,true)}}
-  async function push(state){if(!session||syncing||!state)return;syncing=true;try{await request("/api/v1/state",{method:"PUT",body:JSON.stringify({state})})}catch(e){if(/会话已失效/.test(e.message))saveSession(null);console.warn("Cloud sync paused:",e.message)}finally{syncing=false;refresh()}}
-  function queue(state){if(!session)return;clearTimeout(timer);timer=setTimeout(()=>push(state),700)}
-  function disconnect(){saveSession(null);refresh();note("已只在本设备断开；云端词库仍会保留。")} 
-  function mount(){const holder=document.querySelector(".top-actions")||document.querySelector(".topbar");if(!holder||document.getElementById("cloudSyncButton"))return;const button=document.createElement("button");button.id="cloudSyncButton";button.className="cloud-sync-button";button.type="button";button.innerHTML='<span class="cloud-dot"></span><span>登录 / 云端词库</span>';button.onclick=()=>{refresh();note("");document.getElementById("cloudSyncDialog")?.showModal?.()};holder.append(button);const dialog=document.createElement("dialog");dialog.id="cloudSyncDialog";dialog.className="cloud-dialog";dialog.innerHTML='<form method="dialog" class="cloud-sheet"><button class="cloud-close" value="cancel" aria-label="关闭云端登录">×</button><p class="eyebrow">CLOUD ACCOUNT</p><h2>登录并同步词库</h2><p class="cloud-copy">新设备只需输入同步帐号和口令，即可继续使用同一份单词、错题本、收藏与进度。</p><div id="cloudStatus" class="cloud-status"></div><section id="cloudCreate" class="cloud-section"><h3>首次使用：创建帐号</h3><label>同步帐号<input id="cloudAccountName" minlength="3" maxlength="32" autocomplete="username" autocapitalize="none" placeholder="例如：ielts_yuanzhi"></label><label>设置同步口令<input id="cloudNewPass" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="至少 10 个字符"></label><button id="cloudCreateBtn" class="primary" type="button">创建帐号并同步</button></section><section id="cloudLogin" class="cloud-section"><h3>已有帐号：直接登录</h3><label>同步帐号<input id="cloudLoginName" autocomplete="username" autocapitalize="none" placeholder="输入你的同步帐号"></label><label>同步口令<input id="cloudPass" type="password" minlength="10" maxlength="128" autocomplete="current-password" placeholder="输入你的同步口令"></label><button id="cloudLoginBtn" class="soft" type="button">登录并同步</button><small>旧版用户仍可在帐号框输入以 vault_ 开头的同步 ID。</small></section><div id="cloudConnected" class="cloud-connected" hidden><button id="cloudNowBtn" class="soft" type="button">立即同步</button><button id="cloudDisconnectBtn" class="text-button" type="button">仅断开本设备</button></div><p id="cloudMessage" class="cloud-message" role="status"></p></form>';document.body.append(dialog);document.getElementById("cloudCreateBtn").onclick=register;document.getElementById("cloudLoginBtn").onclick=login;document.getElementById("cloudNowBtn").onclick=pull;document.getElementById("cloudDisconnectBtn").onclick=disconnect;refresh()}
-  window.IELTSCloud=Object.assign(window.IELTSCloud||{},{queue,start:mount});
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount,{once:true});else mount();
+  let timer = null, ready = false, syncing = false;
+
+  async function request(method, state) {
+    const response = await fetch(`${API}/api/v1/public-state`, {
+      method,
+      headers: method === "PUT" ? { "content-type": "application/json" } : undefined,
+      body: method === "PUT" ? JSON.stringify({ state }) : undefined,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw Error(data.error || "公开词库暂时不可用。");
+    return data;
+  }
+
+  function current() { return window.IELTSCloud?.getState?.() || null; }
+  function note(value, bad = false) {
+    const node = document.getElementById("cloudMessage");
+    if (!node) return;
+    node.textContent = value || "";
+    node.classList.toggle("bad", bad);
+  }
+
+  function merge(local, remote) {
+    if (!remote) return local;
+    if (!local) return remote;
+    const preferLocal = Number(local.updatedAt || 0) >= Number(remote.updatedAt || 0);
+    const localCards = Array.isArray(local.cards) ? local.cards : [];
+    const remoteCards = Array.isArray(remote.cards) ? remote.cards : [];
+    const cards = new Map();
+    [...remoteCards, ...localCards].forEach((card, index) => {
+      const key = String(card.id || card.word || "").toLowerCase();
+      const old = cards.get(key), isLocal = index >= remoteCards.length;
+      if (!old || Number(card.updatedAt || 0) > Number(old.updatedAt || 0) || (Number(card.updatedAt || 0) === Number(old.updatedAt || 0) && isLocal === preferLocal)) cards.set(key, card);
+    });
+    const newest = preferLocal ? local : remote;
+    return Object.assign({}, remote, local, newest, { cards: [...cards.values()], updatedAt: Date.now() });
+  }
+
+  async function synchronize(showMessage = false) {
+    if (syncing || !current()) return;
+    syncing = true;
+    try {
+      const remote = await request("GET");
+      const state = merge(current(), remote.state);
+      window.IELTSCloud.replaceState(state);
+      await request("PUT", state);
+      ready = true;
+      refresh();
+      if (showMessage) note("已与公开共享词库同步。");
+    } catch (error) {
+      if (showMessage) note(error.message, true);
+      refresh(false);
+    } finally { syncing = false; }
+  }
+
+  function queue(state) {
+    if (!ready || !state) return;
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      try { await request("PUT", state); refresh(); }
+      catch (error) { refresh(false); }
+    }, 650);
+  }
+
+  function refresh(online = ready) {
+    const status = document.getElementById("cloudStatus");
+    const button = document.getElementById("cloudSyncButton");
+    if (!status) return;
+    status.innerHTML = online
+      ? '<span class="cloud-dot online"></span><div><b>公开共享词库已连接</b><small>任何设备打开后都会自动读取和同步。</small></div>'
+      : '<span class="cloud-dot"></span><div><b>正在连接公开共享词库</b><small>连接恢复后会自动同步。</small></div>';
+    button?.classList.toggle("connected", online);
+  }
+
+  function mount() {
+    const holder = document.querySelector(".top-actions") || document.querySelector(".topbar");
+    if (!holder || document.getElementById("cloudSyncButton")) return;
+    const button = document.createElement("button");
+    button.id = "cloudSyncButton";
+    button.className = "cloud-sync-button";
+    button.type = "button";
+    button.innerHTML = '<span class="cloud-dot"></span><span>公开共享词库</span>';
+    button.onclick = () => { refresh(); note(""); document.getElementById("cloudSyncDialog")?.showModal?.(); };
+    holder.append(button);
+    const dialog = document.createElement("dialog");
+    dialog.id = "cloudSyncDialog";
+    dialog.className = "cloud-dialog";
+    dialog.innerHTML = '<form method="dialog" class="cloud-sheet"><button class="cloud-close" value="cancel" aria-label="关闭公开共享词库">×</button><p class="eyebrow">PUBLIC SHARED DECK</p><h2>公开共享词库</h2><p class="cloud-copy">无需帐号或口令。所有访客共用同一份单词、收藏、错题本和复习进度，打开网站就会自动同步。</p><div id="cloudStatus" class="cloud-status"></div><section class="cloud-section"><h3>请勿保存私人内容</h3><p class="cloud-copy">其他访客可以查看并修改这份词库。适合共同维护的雅思学习词表。</p><button id="cloudNowBtn" class="soft" type="button">立即同步</button></section><p id="cloudMessage" class="cloud-message" role="status"></p></form>';
+    document.body.append(dialog);
+    document.getElementById("cloudNowBtn").onclick = () => synchronize(true);
+    refresh();
+    synchronize();
+  }
+
+  window.IELTSCloud = Object.assign(window.IELTSCloud || {}, { queue, start: mount });
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount, { once: true });
+  else mount();
 })();
