@@ -1,163 +1,75 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#102a43" />
-    <meta name="description" content="输入雅思词汇，生成例句并通过挖空输入练习拼写。" />
-    <title>IELTS Cloze Lab</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23102a43'/%3E%3Cpath d='M17 16h30v7H37v25h-9V23H17z' fill='%23e7b75f'/%3E%3C/svg%3E" />
-    <style>
-      :root { --ink:#102a43; --muted:#64748b; --paper:#f7f6f1; --card:#fff; --line:#dfe6ee; --gold:#e7b75f; --coral:#d96c5f; --green:#13866b; }
-      * { box-sizing:border-box; }
-      body { margin:0; min-width:320px; color:var(--ink); background:var(--paper); font:16px/1.55 ui-rounded, "SF Pro Rounded", "PingFang SC", "Noto Sans SC", system-ui, sans-serif; }
-      button, input, select { font:inherit; }
-      button { cursor:pointer; }
-      .page { width:min(1160px, calc(100% - 32px)); margin:0 auto; padding:28px 0 54px; }
-      header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:30px; }
-      .brand { display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:-.03em; font-size:1.22rem; }
-      .mark { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#fff; background:var(--ink); box-shadow:0 6px 16px #102a4322; font-family:Georgia,serif; font-size:1.35rem; }
-      .status { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.9rem; }
-      .dot { width:9px; height:9px; border-radius:50%; background:var(--green); }
-      .intro { display:grid; grid-template-columns:1.2fr .8fr; gap:22px; align-items:stretch; margin-bottom:22px; }
-      .title-panel { padding:22px 4px; }
-      h1 { margin:0 0 10px; max-width:680px; font-size:clamp(2rem, 4vw, 3.35rem); line-height:1.05; letter-spacing:-.06em; }
-      .title-panel p { max-width:620px; margin:0; color:var(--muted); font-size:1.05rem; }
-      .stats { display:grid; grid-template-columns:repeat(3, 1fr); border:1px solid var(--line); border-radius:20px; overflow:hidden; background:#fffdf9; box-shadow:0 12px 30px #102a0a0c; }
-      .stat { padding:22px 16px; border-left:1px solid var(--line); text-align:center; }
-      .stat:first-child { border-left:0; }
-      .stat strong { display:block; font-size:1.8rem; line-height:1.15; letter-spacing:-.06em; }
-      .stat span { color:var(--muted); font-size:.82rem; }
-      .grid { display:grid; grid-template-columns:365px minmax(0, 1fr); gap:22px; align-items:start; }
-      .panel { border:1px solid var(--line); border-radius:20px; background:var(--card); box-shadow:0 12px 32px #102a4308; }
-      .builder { padding:22px; }
-      h2 { margin:0; font-size:1.12rem; letter-spacing:-.025em; }
-      .hint { color:var(--muted); font-size:.9rem; margin:5px 0 18px; }
-      label { display:block; margin:15px 0 6px; font-weight:700; font-size:.9rem; }
-      input, select { width:100%; min-height:47px; padding:10px 12px; color:var(--ink); background:#fff; border:1px solid #cbd5e1; border-radius:11px; outline:none; }
-      input:focus, select:focus { border-color:var(--ink); box-shadow:0 0 0 3px #102a4318; }
-      .primary { width:100%; margin-top:18px; min-height:48px; border:0; border-radius:12px; color:#fff; background:var(--ink); font-weight:800; transition:transform .15s, background .15s; }
-      .primary:hover { transform:translateY(-1px); background:#183d60; }
-      .note { margin:16px 0 0; color:var(--muted); font-size:.78rem; }
-      .practice { min-height:480px; overflow:hidden; }
-      .practice-top { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:18px 22px; border-bottom:1px solid var(--line); background:#fcfcfa; }
-      .pill { display:inline-flex; align-items:center; padding:4px 9px; border-radius:999px; color:#496071; background:#e8f0f3; font-size:.78rem; font-weight:800; }
-      .word-tag { color:#8a6018; background:#fff3d5; }
-      .lesson { padding:38px clamp(22px, 5vw, 54px); }
-      .sentence { min-height:122px; margin:0 0 26px; font-family:Georgia, "Times New Roman", serif; font-size:clamp(1.55rem, 3.1vw, 2.45rem); line-height:1.45; letter-spacing:-.02em; }
-      .blank { display:inline-block; min-width:4.4em; height:1.05em; margin:0 .06em; vertical-align:-.06em; border-bottom:3px solid var(--gold); }
-      .answer-row { display:flex; gap:10px; }
-      .answer-row input { flex:1; min-width:0; font-size:1.05rem; }
-      .check { flex:0 0 auto; padding:0 19px; border:0; border-radius:11px; color:#fff; background:var(--coral); font-weight:800; }
-      .check:hover { background:#bd554b; }
-      .feedback { min-height:29px; margin:12px 0 0; font-weight:700; }
-      .feedback.ok { color:var(--green); }
-      .feedback.no { color:#b6463c; }
-      .actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:30px; padding-top:20px; border-top:1px solid var(--line); }
-      .audio, .next { min-height:42px; padding:0 14px; border-radius:10px; font-weight:750; }
-      .audio { color:var(--ink); border:1px solid var(--line); background:#fff; }
-      .next { color:#fff; border:0; background:var(--ink); }
-      .audio:disabled, .next:disabled { opacity:.45; cursor:not-allowed; }
-      .deck { margin-top:22px; padding:20px 22px; }
-      .deck-header { display:flex; align-items:center; justify-content:space-between; gap:14px; }
-      .clear { border:0; padding:5px; color:var(--muted); background:transparent; font-size:.82rem; text-decoration:underline; }
-      .word-list { display:flex; flex-wrap:wrap; gap:8px; margin:15px 0 0; }
-      .chip { display:flex; align-items:center; gap:7px; padding:6px 8px 6px 10px; border:1px solid var(--line); border-radius:999px; background:#fbfcfe; font-size:.88rem; }
-      .chip button { width:18px; height:18px; border:0; border-radius:50%; color:#76879a; background:#e9eff3; line-height:16px; }
-      .empty { color:var(--muted); font-size:.9rem; }
-      @media (max-width:800px) { .intro,.grid { grid-template-columns:1fr; } .title-panel{ padding-top:0; } .practice { min-height:0; } }
-      @media (max-width:490px) { .page{ width:min(100% - 22px, 1160px); padding-top:16px; } header{ margin-bottom:21px; } .status{ font-size:.78rem; } .stats{ border-radius:15px; } .stat{ padding:15px 9px; } .stat strong{ font-size:1.45rem; } .builder{ padding:18px; } .practice-top{ padding:15px 18px; } .lesson{ padding:30px 20px; } .answer-row{ flex-direction:column; } .check{ min-height:46px; } }
-    </style>
-  </head>
-  <body>
-    <main class="page">
-      <header>
-        <div class="brand"><span class="mark">T</span> IELTS Cloze Lab</div>
-        <div class="status"><span class="dot"></span><span>你的卡片只保存在这台设备</span></div>
-      </header>
-      <section class="intro">
-        <div class="title-panel"><h1>把背诵，变成真正的输出。</h1><p>输入一个词，生成英文例句；挖空、键入、答对后听完整句子。每张卡片都在你的浏览器里。</p></div>
-        <div class="stats" aria-label="学习统计"><div class="stat"><strong id="statWords">1</strong><span>词汇卡</span></div><div class="stat"><strong id="statCorrect">0</strong><span>答对次数</span></div><div class="stat"><strong id="statStreak">0</strong><span>当前连对</span></div></div>
-      </section>
-      <section class="grid">
-        <aside class="panel builder">
-          <h2>新建词汇卡</h2><p class="hint">输入你想背的词或短语，选择它在句子中的用法。</p>
-          <label for="wordInput">单词 / 短语</label><input id="wordInput" autocomplete="off" placeholder="例如: sustainable" value="sustainable" />
-          <label for="roleInput">词性</label><select id="roleInput"><option value="adjective">形容词</option><option value="noun">名词</option><option value="verb">动词</option><option value="phrase">短语 / 其他</option></select>
-          <label for="topicInput">雅思话题</label><select id="topicInput"><option value="environment">环境</option><option value="education">教育</option><option value="technology">科技</option><option value="society">社会</option></select>
-          <button class="primary" id="generateBtn" type="button">生成例句并开始练习</button>
-          <p class="note">例句由内置学习模板即时生成，不上传你的词汇。自然语言 AI 出句可在后续接入服务端密钥。</p>
-        </aside>
-        <section>
-          <article class="panel practice" aria-live="polite">
-            <div class="practice-top"><span class="pill">填空练习</span><span class="pill word-tag" id="topicPill">环境话题</span></div>
-            <div class="lesson">
-              <p class="sentence" id="sentence" lang="en"></p>
-              <form class="answer-row" id="answerForm"><input id="answerInput" aria-label="输入缺失单词" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="输入缺失的英文单词" /><button class="check" type="submit">检查</button></form>
-              <p class="feedback" id="feedback" role="status"></p>
-              <div class="actions"><button class="audio" id="audioBtn" type="button" aria-label="朗读完整句子">🔊 朗读完整句子</button><button class="next" id="nextBtn" type="button">下一张 →</button></div>
-            </div>
-          </article>
-          <section class="panel deck"><div class="deck-header"><h2>我的词汇卡</h2><button class="clear" id="clearBtn" type="button">清空本机卡片</button></div><div class="word-list" id="wordList"></div></section>
-        </section>
-      </section>
-    </main>
-    <script>
-      const KEY = 'ielts-cloze-lab-v1';
-      const topicNames = { environment:'环境', education:'教育', technology:'科技', society:'社会' };
-      const topicTails = {
-        environment: { noun:'can help protect natural resources for future generations.', adjective:'urban planning is essential for protecting natural resources.', verb:'governments should do more to protect natural resources for future generations.', phrase:'is a key consideration when cities plan for future growth.' },
-        education: { noun:'can broaden students\' understanding of the world.', adjective:'teaching methods can encourage students to think independently.', verb:'schools should help students think independently and communicate clearly.', phrase:'can give students more confidence in academic discussions.' },
-        technology: { noun:'is changing how people work and communicate every day.', adjective:'digital tools can make complex information easier to access.', verb:'new tools can help people work more efficiently and accurately.', phrase:'is becoming increasingly important in modern workplaces.' },
-        society: { noun:'plays an important role in creating inclusive communities.', adjective:'public policies can support stronger and more inclusive communities.', verb:'communities should work together to solve local problems.', phrase:'can improve the quality of life in local communities.' }
-      };
-      const starter = { word:'sustainable', role:'adjective', topic:'environment', correct:0, attempts:0 };
-      let state = JSON.parse(localStorage.getItem(KEY) || 'null') || { cards:[starter], active:0, streak:0 };
-      const el = id => document.getElementById(id);
-      function sentenceFor(card) {
-        const word = card.word.trim(); const tail = topicTails[card.topic][card.role];
-        if (card.role === 'noun') return `The ${word} ${tail}`;
-        if (card.role === 'adjective') return `${word.charAt(0).toUpperCase() + word.slice(1)} ${tail}`;
-        if (card.role === 'verb') return `To ${word}, ${tail}`;
-        return `In IELTS discussions, ${word} ${tail}`;
-      }
-      function activeCard() { return state.cards[state.active] || state.cards[0]; }
-      function answerInSentence(sentence, word) {
-        const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return sentence.replace(new RegExp(escaped, 'i'), match => `<span class="blank" aria-label="缺失单词"></span>`);
-      }
-      function normalize(value) { return value.trim().toLowerCase().replace(/[.,;:!?]/g, '').replace(/\s+/g, ' '); }
-      function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
-      function renderStats() {
-        el('statWords').textContent = state.cards.length;
-        el('statCorrect').textContent = state.cards.reduce((sum, card) => sum + (card.correct || 0), 0);
-        el('statStreak').textContent = state.streak || 0;
-      }
-      function renderDeck() {
-        const list = el('wordList'); list.innerHTML = '';
-        if (!state.cards.length) { list.innerHTML = '<span class="empty">还没有词汇卡。先输入一个单词吧。</span>'; return; }
-        state.cards.forEach((card, index) => { const chip = document.createElement('span'); chip.className='chip'; chip.innerHTML=`<span lang="en">${card.word}</span><button type="button" aria-label="删除 ${card.word}">×</button>`; chip.querySelector('span').onclick=()=>{state.active=index; save(); render();}; chip.querySelector('button').onclick=()=>removeCard(index); list.appendChild(chip); });
-      }
-      function render() {
-        if (!state.cards.length) { el('sentence').textContent='输入一个单词，开始你的第一张卡片。'; el('topicPill').textContent='等待开始'; el('answerInput').disabled=true; el('audioBtn').disabled=true; el('nextBtn').disabled=true; renderStats(); renderDeck(); return; }
-        if (state.active >= state.cards.length) state.active=0;
-        const card=activeCard(), sentence=sentenceFor(card); el('sentence').innerHTML=answerInSentence(sentence, card.word); el('topicPill').textContent=topicNames[card.topic]+'话题'; el('answerInput').disabled=false; el('audioBtn').disabled=false; el('nextBtn').disabled=false; el('answerInput').value=''; el('feedback').textContent=''; el('feedback').className='feedback'; renderStats(); renderDeck();
-      }
-      function speak() {
-        const card=activeCard(); if (!card || !('speechSynthesis' in window)) { el('feedback').textContent='这台设备暂不支持浏览器朗读。'; el('feedback').className='feedback no'; return; }
-        speechSynthesis.cancel(); const utterance=new SpeechSynthesisUtterance(sentenceFor(card)); utterance.lang='en-GB'; utterance.rate=.82; utterance.pitch=1; const voices=speechSynthesis.getVoices(); const voice=voices.find(v=>/^en-GB/i.test(v.lang)) || voices.find(v=>/^en/i.test(v.lang)); if (voice) utterance.voice=voice; speechSynthesis.speak(utterance);
-      }
-      function checkAnswer(event) {
-        event.preventDefault(); const card=activeCard(), input=normalize(el('answerInput').value), expected=normalize(card.word); if (!input) { el('feedback').textContent='先输入你认为缺失的单词。'; el('feedback').className='feedback no'; return; } card.attempts=(card.attempts||0)+1;
-        if (input===expected) { card.correct=(card.correct||0)+1; state.streak=(state.streak||0)+1; el('feedback').textContent='答对了！现在听完整的句子。'; el('feedback').className='feedback ok'; save(); renderStats(); speak(); } else { state.streak=0; el('feedback').textContent=`还差一点。提示：这个答案有 ${[...card.word].length} 个字符。`; el('feedback').className='feedback no'; save(); renderStats(); }
-      }
-      function nextCard() { if (!state.cards.length) return; state.active=(state.active+1)%state.cards.length; save(); render(); el('answerInput').focus(); }
-      function createCard() {
-        const word=el('wordInput').value.trim(); if (!word) { el('wordInput').focus(); return; }
-        const card={word, role:el('roleInput').value, topic:el('topicInput').value, correct:0, attempts:0}; const existing=state.cards.findIndex(item=>normalize(item.word)===normalize(word)); if(existing>=0) state.cards[existing]=card; else state.cards.unshift(card); state.active=0; save(); render(); el('answerInput').focus();
-      }
-      function removeCard(index) { state.cards.splice(index,1); if(state.active>=state.cards.length) state.active=Math.max(0,state.cards.length-1); save(); render(); }
-      el('generateBtn').onclick=createCard; el('answerForm').onsubmit=checkAnswer; el('audioBtn').onclick=speak; el('nextBtn').onclick=nextCard; el('clearBtn').onclick=()=>{ if(confirm('确定清空这台设备上的全部词汇卡吗？')) { state={cards:[],active:0,streak:0}; save(); render(); } }; if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged=()=>{}; render();
-    </script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#070b16" />
+  <meta name="description" content="深色科幻风雅思词汇挖空练习：导入词库、译文、错题复习与朗读。" />
+  <title>IELTS Cloze Lab · Deep Space</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23070b16'/%3E%3Cpath d='M16 15h32v8H37v26h-10V23H16z' fill='%2336d9ff'/%3E%3Ccircle cx='48' cy='17' r='5' fill='%2355f6b3'/%3E%3C/svg%3E" />
+  <script src="xlsx.full.min.js"></script>
+  <style>
+    :root { --bg:#070b16; --panel:#10182a; --panel-2:#151f35; --line:#263755; --text:#eaf2ff; --muted:#98a9c5; --cyan:#36d9ff; --mint:#55f6b3; --violet:#a78bfa; --coral:#ff667a; --gold:#f7c75a; --shadow:0 22px 60px #0008; }
+    * { box-sizing:border-box; } html { color-scheme:dark; } body { min-width:320px; margin:0; overflow-x:hidden; color:var(--text); background:radial-gradient(circle at 20% -10%,#1c326044 0,transparent 32rem),radial-gradient(circle at 100% 28%,#4420722a 0,transparent 30rem),var(--bg); font:16px/1.55 Inter,"PingFang SC","Noto Sans SC",system-ui,sans-serif; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.3; background-image:linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff04 1px,transparent 1px); background-size:48px 48px; mask-image:linear-gradient(#0008,transparent 75%); }
+    button,input,select { font:inherit; } button { cursor:pointer; } button:focus-visible,input:focus-visible,select:focus-visible { outline:3px solid #36d9ff99; outline-offset:2px; }
+    .app { width:min(1200px,calc(100% - 32px)); margin:auto; padding:22px 0 54px; position:relative; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:0 2px 20px; }
+    .brand { display:flex; gap:11px; align-items:center; font-weight:800; letter-spacing:-.04em; } .mark { width:38px; height:38px; display:grid; place-items:center; border:1px solid #36d9ff66; border-radius:12px; color:var(--cyan); background:#0d1d35; box-shadow:0 0 24px #36d9ff2a; font-family:Georgia,serif; font-size:1.3rem; }
+    .system { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.84rem; } .system i { width:8px; height:8px; border-radius:50%; background:var(--mint); box-shadow:0 0 11px var(--mint); }
+    .dashboard { display:grid; grid-template-columns:1.2fr .8fr; gap:16px; align-items:stretch; margin-bottom:16px; }
+    .hero { padding:22px 2px; } h1 { max-width:670px; margin:0 0 8px; font-size:clamp(2rem,4.8vw,3.75rem); line-height:1.05; letter-spacing:-.065em; } .hero p { max-width:650px; margin:0; color:var(--muted); }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); overflow:hidden; border:1px solid var(--line); border-radius:18px; background:#0d1527cc; box-shadow:var(--shadow); } .stat { min-width:0; padding:18px 12px; border-left:1px solid var(--line); text-align:center; } .stat:first-child { border-left:0; } .stat strong { display:block; color:var(--text); font-size:1.75rem; line-height:1.05; letter-spacing:-.06em; } .stat strong.glow { color:var(--mint); text-shadow:0 0 20px #55f6b388; } .stat span { display:block; margin-top:6px; color:var(--muted); font-size:.78rem; }
+    .tabs { display:flex; gap:8px; margin:0 0 16px; overflow:auto; padding-bottom:2px; } .tab { flex:0 0 auto; min-height:40px; padding:0 14px; border:1px solid var(--line); border-radius:10px; color:var(--muted); background:#10182a99; font-weight:750; } .tab.active { color:var(--cyan); border-color:#36d9ff66; background:#133251; box-shadow:inset 0 0 18px #36d9ff13; }
+    .workspace { display:grid; grid-template-columns:350px minmax(0,1fr); gap:16px; align-items:start; } .panel { border:1px solid var(--line); border-radius:18px; background:linear-gradient(140deg,#151f35ee,#0d1425ee); box-shadow:var(--shadow); } .builder { padding:20px; } h2 { margin:0; font-size:1.05rem; letter-spacing:-.025em; } .sub { margin:5px 0 16px; color:var(--muted); font-size:.87rem; }
+    label { display:block; margin:13px 0 6px; color:#c9d5ea; font-size:.87rem; font-weight:750; } input,select { width:100%; min-height:44px; padding:9px 11px; border:1px solid #344766; border-radius:10px; color:var(--text); background:#0a1120; } input::placeholder { color:#6f82a1; }
+    .dual { display:grid; grid-template-columns:1fr 1fr; gap:10px; } .primary,.secondary,.icon-btn { border:0; border-radius:10px; font-weight:800; transition:transform .16s,filter .16s,box-shadow .16s; } .primary:hover,.secondary:hover,.icon-btn:hover { transform:translateY(-1px); filter:brightness(1.1); } .primary { width:100%; min-height:46px; margin-top:17px; color:#05111c; background:linear-gradient(100deg,var(--cyan),#72c8ff); box-shadow:0 8px 24px #36d9ff28; } .secondary { min-height:40px; padding:0 12px; color:var(--text); border:1px solid #425779; background:#16243c; } .import-box { margin-top:18px; padding-top:17px; border-top:1px solid var(--line); } .file-label { display:flex; align-items:center; justify-content:center; min-height:42px; border:1px dashed #4b668d; border-radius:10px; color:#b9cce8; background:#0a1120; text-align:center; font-size:.84rem; font-weight:750; cursor:pointer; } .file-label input { display:none; } .import-preview { display:none; margin-top:10px; padding:10px; border-radius:9px; color:#b4c7e3; background:#091120; font-size:.8rem; } .import-preview.show { display:block; } .import-preview b { color:var(--mint); }
+    .settings { display:flex; align-items:center; justify-content:space-between; gap:9px; margin-top:15px; padding-top:13px; border-top:1px solid var(--line); color:var(--muted); font-size:.8rem; } .toggle { display:flex; align-items:center; gap:7px; cursor:pointer; } .toggle input { width:16px; min-height:auto; accent-color:var(--cyan); }
+    .practice { overflow:hidden; min-height:520px; position:relative; } .practice-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 20px; border-bottom:1px solid var(--line); background:#0d1527aa; } .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border:1px solid #3a577d; border-radius:999px; color:#b6cce8; background:#101f35; font-size:.76rem; font-weight:800; } .badge.topic { border-color:#674fa1; color:#d3c5ff; background:#251d40; } .head-actions { display:flex; gap:8px; } .icon-btn { width:34px; height:34px; border:1px solid #405270; color:#b7c6dd; background:#101c30; } .icon-btn.fav { color:var(--gold); border-color:#f7c75a77; background:#342a13; }
+    .lesson { padding:clamp(25px,5vw,52px); } .progress { display:flex; gap:5px; margin-bottom:22px; } .progress span { width:24px; height:3px; border-radius:99px; background:#243652; } .progress span.on { background:var(--cyan); box-shadow:0 0 9px var(--cyan); }
+    .sentence { min-height:108px; margin:0; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.6rem,3.1vw,2.55rem); line-height:1.43; letter-spacing:-.02em; } .blank { display:inline-block; min-width:4.2em; height:1.03em; margin:0 .06em; vertical-align:-.06em; border-bottom:3px solid var(--cyan); filter:drop-shadow(0 3px 4px #36d9ff55); } .translation { min-height:28px; margin:13px 0 24px; color:#98a9c5; font-size:.98rem; } .translation.hidden { visibility:hidden; }
+    .answer-row { display:flex; gap:10px; } .answer-row input { flex:1; font-size:1.04rem; } .check { flex:0 0 auto; min-width:88px; border:0; border-radius:10px; color:#07101d; background:var(--mint); font-weight:900; box-shadow:0 7px 22px #55f6b328; } .feedback { min-height:29px; margin:11px 0 0; font-weight:750; } .feedback.ok { color:var(--mint); } .feedback.no { color:#ff9baa; } .feedback.shake { animation:shake .32s ease; }
+    .voice { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:25px; padding-top:18px; border-top:1px solid var(--line); } .voice-meta { display:flex; align-items:center; gap:9px; min-width:0; color:var(--muted); font-size:.8rem; } .wave { display:flex; align-items:center; gap:2px; height:20px; } .wave i { width:3px; height:8px; border-radius:4px; background:var(--cyan); } .speaking .wave i { animation:wave .65s ease-in-out infinite alternate; } .speaking .wave i:nth-child(2) { animation-delay:.12s; } .speaking .wave i:nth-child(3) { animation-delay:.24s; } .speaking .wave i:nth-child(4) { animation-delay:.36s; } .voice-btn { min-height:39px; padding:0 12px; color:#dceaff; border:1px solid #4a668d; border-radius:10px; background:#101f35; font-weight:800; } .next { min-height:39px; margin-left:8px; padding:0 12px; border:0; border-radius:10px; color:#070b16; background:var(--cyan); font-weight:900; }
+    .collection { margin-top:16px; padding:18px 20px; } .collection-head { display:flex; align-items:center; justify-content:space-between; gap:12px; } .collection-note { color:var(--muted); font-size:.8rem; } .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-top:14px; } .mini { padding:13px; border:1px solid #2b3e5c; border-radius:12px; background:#0d1729; } .mini-top { display:flex; align-items:center; justify-content:space-between; gap:6px; } .mini strong { font-size:1.04rem; } .mini small { display:block; margin-top:5px; color:var(--muted); } .mini-actions { display:flex; gap:7px; margin-top:10px; } .mini-actions button { min-height:31px; padding:0 8px; border:1px solid #3b5274; border-radius:8px; color:#c8d9f1; background:#16243b; font-size:.77rem; font-weight:750; } .empty { padding:7px 0; color:var(--muted); font-size:.9rem; }
+    .reward { position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; opacity:0; } .reward.show { animation:reward .78s ease-out; } .reward .ring { width:144px; height:144px; border:2px solid var(--mint); border-radius:50%; box-shadow:0 0 48px #55f6b377,inset 0 0 30px #55f6b333; transform:scale(.3); } .reward .correct-text { position:absolute; color:var(--mint); font-size:1.2rem; font-weight:900; letter-spacing:.14em; } .streak-float { position:fixed; z-index:9; top:22%; left:50%; transform:translateX(-50%); padding:10px 16px; border:1px solid #a78bfa; border-radius:999px; color:#e3dcff; background:#201a3de8; box-shadow:0 0 42px #a78bfa77; font-weight:900; pointer-events:none; animation:streak .95s ease-out forwards; }
+    @keyframes shake { 20%,60% { transform:translateX(-5px); } 40%,80% { transform:translateX(5px); } } @keyframes wave { to { height:19px; opacity:.45; } } @keyframes reward { 15% { opacity:1; } 100% { opacity:0; } } @keyframes streak { 15% { transform:translate(-50%,-12px) scale(1.12); } 100% { transform:translate(-50%,-68px) scale(.95); opacity:0; } }
+    @media (max-width:820px) { .dashboard,.workspace { grid-template-columns:1fr; } .hero { padding:8px 2px; } .workspace { display:flex; flex-direction:column; } .practice { order:-1; width:100%; } .builder { width:100%; } } @media (max-width:520px) { .app { width:min(100% - 20px,1200px); padding-top:14px; } .system span { display:none; } .stats { border-radius:13px; } .stat { padding:14px 7px; } .stat strong { font-size:1.45rem; } .lesson { padding:25px 18px; } .answer-row { flex-direction:column; } .check { min-height:45px; } .voice { align-items:flex-start; flex-direction:column; } .voice div:last-child { width:100%; display:flex; } .voice-btn,.next { flex:1; } .dual { grid-template-columns:1fr; gap:0; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar"><div class="brand"><span class="mark">T</span><span>IELTS Cloze Lab</span></div><div class="system"><i></i><span>DEEP SPACE · 本机私有学习舱</span></div></header>
+    <section class="dashboard"><div class="hero"><h1>记住它。<br>然后亲手写出来。</h1><p>导入词库，先回忆再核验；错词会留下可复习的轨迹，答对后用声音和节奏把记忆加固。</p></div><div class="stats" aria-label="学习统计"><div class="stat"><strong id="statDue">0</strong><span>待复习</span></div><div class="stat"><strong class="glow" id="statStreak">0</strong><span>连续答对</span></div><div class="stat"><strong id="statToday">0 / 10</strong><span>今日完成</span></div></div></section>
+    <nav class="tabs" aria-label="词卡区域"><button class="tab active" data-view="all">全部词库</button><button class="tab" data-view="favorite">★ 收藏</button><button class="tab" data-view="mistake">错题本</button></nav>
+    <section class="workspace">
+      <aside class="panel builder"><h2>新建 / 导入词汇</h2><p class="sub">一个词只挖一个空。中文释义可手动填写，空着时将尝试自动查询。</p><label for="wordInput">单词或短语</label><input id="wordInput" autocomplete="off" placeholder="例如：mitigate" value="sustainable" /><label for="glossInput">中文释义（可选）</label><input id="glossInput" autocomplete="off" placeholder="例如：减轻；缓解" /><div class="dual"><div><label for="roleInput">词性</label><select id="roleInput"><option value="adjective">形容词</option><option value="noun">名词</option><option value="verb">动词</option><option value="phrase">短语 / 其他</option></select></div><div><label for="topicInput">雅思话题</label><select id="topicInput"><option value="environment">环境</option><option value="education">教育</option><option value="technology">科技</option><option value="society">社会</option></select></div></div><button class="primary" id="generateBtn" type="button">生成例句并开始练习</button><div class="import-box"><label class="file-label" for="fileInput">＋ 一键导入 TXT / CSV / Excel<input id="fileInput" type="file" accept=".txt,.csv,.tsv,.xlsx,.xls" /></label><div class="import-preview" id="importPreview"></div><button class="secondary" id="confirmImportBtn" type="button" hidden>确认导入词库</button></div><div class="settings"><label class="toggle"><input id="typeSoundToggle" type="checkbox" />机械键盘音效</label><label class="toggle"><input id="autoSpeakToggle" type="checkbox" checked />答对后朗读</label></div></aside>
+      <section class="panel practice" id="practiceCard" aria-live="polite"><div class="practice-head"><div><span class="badge">主动回忆</span><span class="badge topic" id="topicPill">环境</span></div><div class="head-actions"><button class="icon-btn" id="translationBtn" type="button" aria-label="显示或隐藏翻译">中</button><button class="icon-btn" id="favoriteBtn" type="button" aria-label="收藏这个词">☆</button></div></div><div class="lesson"><div class="progress" aria-label="学习进度"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></div><p class="sentence" id="sentence" lang="en"></p><p class="translation hidden" id="translation"></p><form class="answer-row" id="answerForm"><input id="answerInput" aria-label="输入缺失单词" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="输入缺失的英文单词" /><button class="check" type="submit">核验</button></form><p class="feedback" id="feedback" role="status"></p><div class="voice"><div class="voice-meta" id="voiceMeta"><span class="wave"><i></i><i></i><i></i><i></i></span><span>英音朗读 · 0.9×</span></div><div><button class="voice-btn" id="audioBtn" type="button">🔊 朗读</button><button class="next" id="nextBtn" type="button">下一题 →</button></div></div></div><div class="reward" id="reward" aria-hidden="true"><div class="ring"></div><span class="correct-text">CORRECT</span></div></section>
+    </section>
+    <section class="panel collection"><div class="collection-head"><h2 id="collectionTitle">全部词库</h2><span class="collection-note" id="collectionNote">点击词卡可直接练习</span></div><div class="cards" id="collectionList"></div></section>
+  </main>
+  <script>
+    const KEY='ielts-cloze-deep-space-v2', knownGloss={sustainable:'可持续的',mitigate:'减轻；缓解',biodiversity:'生物多样性',innovate:'创新',cohesion:'凝聚力'}, topicNames={environment:'环境',education:'教育',technology:'科技',society:'社会'};
+    const tails={environment:{noun:'can help protect natural resources for future generations.',adjective:'urban planning is essential for protecting natural resources.',verb:'governments should do more to protect natural resources for future generations.',phrase:'is a key consideration when cities plan for future growth.'},education:{noun:'can broaden students\' understanding of the world.',adjective:'teaching methods can encourage students to think independently.',verb:'schools should help students think independently and communicate clearly.',phrase:'can give students more confidence in academic discussions.'},technology:{noun:'is changing how people work and communicate every day.',adjective:'digital tools can make complex information easier to access.',verb:'new tools can help people work more efficiently and accurately.',phrase:'is becoming increasingly important in modern workplaces.'},society:{noun:'plays an important role in creating inclusive communities.',adjective:'public policies can support stronger and more inclusive communities.',verb:'communities should work together to solve local problems.',phrase:'can improve the quality of life in local communities.'}};
+    const chineseTails={environment:{noun:'有助于为下一代保护自然资源。',adjective:'的城市规划对于保护自然资源至关重要。',verb:'，政府应为下一代更好地保护自然资源。',phrase:'是城市规划未来增长时的重要考量。'},education:{noun:'能拓宽学生对世界的理解。',adjective:'的教学方式能鼓励学生独立思考。',verb:'，学校应帮助学生独立思考并清晰沟通。',phrase:'能让学生在学术讨论中更有信心。'},technology:{noun:'正在改变人们日常工作和交流的方式。',adjective:'的数字工具可让复杂信息更易获取。',verb:'，新工具能帮助人们更高效、更准确地工作。',phrase:'在现代职场变得日益重要。'},society:{noun:'对建设包容性的社区很重要。',adjective:'的公共政策可支持更强大、更包容的社区。',verb:'，社区应共同解决本地问题。',phrase:'能改善当地社区的生活品质。'}};
+    const el=id=>document.getElementById(id), idFor=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()), starter={id:'starter',word:'sustainable',gloss:'可持续的',role:'adjective',topic:'environment',correct:0,attempts:0,wrong:0,correctStreak:0,favorite:false,due:Date.now(),interval:0};
+    let state=loadState(),selectedView='all',showTranslation=false,pendingImport=[];
+    function normalizeState(d){d.cards=d.cards.map((c,i)=>Object.assign({id:idFor(),gloss:knownGloss[String(c.word||'').toLowerCase()]||'',role:'noun',topic:'environment',correct:0,attempts:0,wrong:0,correctStreak:0,favorite:false,due:Date.now(),interval:0},c,{id:c.id||('card-'+i+'-'+idFor())}));d.active=d.active||0;d.streak=d.streak||0;d.today=d.today||0;d.settings=Object.assign({typeSound:false,autoSpeak:true},d.settings||{});return d;}
+    function loadState(){try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&Array.isArray(saved.cards))return normalizeState(saved);const old=JSON.parse(localStorage.getItem('ielts-cloze-lab-v1'));if(old&&Array.isArray(old.cards))return normalizeState({cards:old.cards,active:0,streak:old.streak||0,today:0,settings:{typeSound:false,autoSpeak:true}});}catch(e){}return normalizeState({cards:[starter],active:0,streak:0,today:0,settings:{typeSound:false,autoSpeak:true}});}
+    function save(){localStorage.setItem(KEY,JSON.stringify(state));} function normalize(t){return String(t||'').trim().toLowerCase().replace(/[.,;:!?]/g,'').replace(/\s+/g,' ');} function sentenceFor(c){const w=String(c.word).trim(),t=tails[c.topic][c.role];if(c.role==='noun')return'The '+w+' '+t;if(c.role==='adjective')return w.charAt(0).toUpperCase()+w.slice(1)+' '+t;if(c.role==='verb')return'To '+w+', '+t;return'In IELTS discussions, '+w+' '+t;} function translationFor(c){const w='“'+c.word+'”'+(c.gloss?'（'+c.gloss+'）':'');const t=chineseTails[c.topic][c.role];if(c.role==='verb')return'为了'+w+t;if(c.role==='phrase')return'在雅思讨论中，'+w+t;return w+t;}
+    function maskSentence(s,w){const at=s.toLowerCase().indexOf(String(w).toLowerCase());if(at<0)return s;return s.slice(0,at)+'<span class="blank" aria-label="缺失单词"></span>'+s.slice(at+String(w).length);} function activeCard(){return state.cards[state.active]||state.cards[0];} function cardList(){if(selectedView==='favorite')return state.cards.filter(c=>c.favorite);if(selectedView==='mistake')return state.cards.filter(c=>c.wrong>0&&c.correctStreak<2);return state.cards;}
+    function renderStats(){el('statDue').textContent=state.cards.filter(c=>(c.due||0)<=Date.now()).length;el('statStreak').textContent=state.streak;el('statToday').textContent=state.today+' / 10';}
+    function renderCollection(){const titles={all:'全部词库',favorite:'★ 收藏词库',mistake:'错题本'},notes={all:'点击词卡可直接练习',favorite:'主动保留你想用于表达的词',mistake:'答对两次后会标记为已恢复'};el('collectionTitle').textContent=titles[selectedView];el('collectionNote').textContent=notes[selectedView];const list=el('collectionList');list.innerHTML='';const cards=cardList();if(!cards.length){list.innerHTML='<p class="empty">这里暂时没有词。去新建或导入一些吧。</p>';return;}cards.forEach(c=>{const item=document.createElement('article');item.className='mini';const status=c.wrong>0?'错 '+c.wrong+' 次':'新词';item.innerHTML='<div class="mini-top"><strong lang="en"></strong><button class="icon-btn" aria-label="收藏词汇" type="button"></button></div><small>'+status+' · '+topicNames[c.topic]+'</small><div class="mini-actions"><button type="button">练习这个词</button><button type="button">朗读</button></div>';item.querySelector('strong').textContent=c.word;const fav=item.querySelector('.icon-btn');fav.textContent=c.favorite?'★':'☆';if(c.favorite)fav.classList.add('fav');fav.onclick=()=>toggleFavoriteById(c.id);item.querySelectorAll('.mini-actions button')[0].onclick=()=>openCard(c.id);item.querySelectorAll('.mini-actions button')[1].onclick=()=>speakCard(c);list.appendChild(item);});}
+    function render(){if(!state.cards.length){el('sentence').textContent='导入或输入一个单词，开始你的学习舱。';el('translation').textContent='';el('answerInput').disabled=true;return;}if(state.active>=state.cards.length)state.active=0;const c=activeCard();el('sentence').innerHTML=maskSentence(sentenceFor(c),c.word);el('translation').textContent=translationFor(c);el('translation').classList.toggle('hidden',!showTranslation);el('topicPill').textContent=topicNames[c.topic];el('favoriteBtn').textContent=c.favorite?'★':'☆';el('favoriteBtn').classList.toggle('fav',c.favorite);el('answerInput').disabled=false;el('answerInput').value='';el('feedback').className='feedback';el('feedback').textContent='';el('typeSoundToggle').checked=state.settings.typeSound;el('autoSpeakToggle').checked=state.settings.autoSpeak;renderStats();renderCollection();}
+    function openCard(id){const ix=state.cards.findIndex(c=>c.id===id);if(ix>=0){state.active=ix;save();render();el('answerInput').focus();document.getElementById('practiceCard').scrollIntoView({behavior:'smooth',block:'center'});}} function setFeedback(t,k){const b=el('feedback');b.textContent=t;b.className='feedback '+k;}
+    async function fillGloss(c){if(c.gloss)return;const local=knownGloss[normalize(c.word)];if(local){c.gloss=local;save();render();return;}try{const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(c.word)+'&langpair=en|zh-CN'),d=await r.json(),v=String(d.responseData&&d.responseData.translatedText||'').trim();if(v&&!/MYMEMORY WARNING/i.test(v)){c.gloss=v;save();render();}}catch(e){}}
+    function validWord(v){return /^[A-Za-z][A-Za-z' -]{0,80}$/.test(v);} function createCard(word,gloss){const clean=word.trim();if(!clean||!validWord(clean))return null;const existing=state.cards.findIndex(c=>normalize(c.word)===normalize(clean));const card={id:existing>=0?state.cards[existing].id:idFor(),word:clean,gloss:(gloss||knownGloss[normalize(clean)]||'').trim(),role:el('roleInput').value,topic:el('topicInput').value,correct:0,attempts:0,wrong:0,correctStreak:0,favorite:false,due:Date.now(),interval:0};if(existing>=0)state.cards[existing]=Object.assign(state.cards[existing],card);else state.cards.unshift(card);state.active=existing>=0?existing:0;fillGloss(card);return card;} function generate(){const c=createCard(el('wordInput').value,el('glossInput').value);if(!c){el('wordInput').focus();setFeedback('请输入英文单词或短语。','no');return;}save();render();el('answerInput').focus();} function toggleFavoriteById(id){const c=state.cards.find(x=>x.id===id);if(c){c.favorite=!c.favorite;save();render();}} function toggleFavorite(){const c=activeCard();if(c)toggleFavoriteById(c.id);}
+    function nextCard(){if(!state.cards.length)return;const allowed=cardList();if(!allowed.length){selectedView='all';document.querySelector('[data-view="all"]').click();return;}const current=allowed.findIndex(c=>c.id===activeCard().id),next=allowed[(current+1+allowed.length)%allowed.length];openCard(next.id);} function showReward(){const r=el('reward');r.classList.remove('show');void r.offsetWidth;r.classList.add('show');} function showStreak(){if(![3,5,10,20].includes(state.streak))return;const tag=document.createElement('div');tag.className='streak-float';tag.textContent='STREAK ×'+state.streak;document.body.appendChild(tag);setTimeout(()=>tag.remove(),1000);}
+    function audioContext(){if(!state._audio)state._audio=new(window.AudioContext||window.webkitAudioContext)();return state._audio;} function typeClick(backspace){if(!state.settings.typeSound||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const now=Date.now();if(now-(state.lastClick||0)<38)return;state.lastClick=now;try{const ctx=audioContext(),o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=backspace?120:Math.random()*70+210;g.gain.setValueAtTime(.009,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.035);o.connect(g).connect(ctx.destination);o.start();o.stop(ctx.currentTime+.04);}catch(e){}}
+    function speakCard(c){if(!c||!window.speechSynthesis){setFeedback('这台设备暂不支持朗读。','no');return;}window.speechSynthesis.cancel();const word=new SpeechSynthesisUtterance(c.word),sentence=new SpeechSynthesisUtterance(sentenceFor(c));[word,sentence].forEach(u=>{u.lang='en-GB';u.rate=.9;});const voices=window.speechSynthesis.getVoices(),voice=voices.find(v=>/^en-GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang));if(voice){word.voice=voice;sentence.voice=voice;}el('voiceMeta').classList.add('speaking');sentence.onend=()=>el('voiceMeta').classList.remove('speaking');sentence.onerror=()=>el('voiceMeta').classList.remove('speaking');window.speechSynthesis.speak(word);setTimeout(()=>window.speechSynthesis.speak(sentence),360);}
+    function checkAnswer(e){e.preventDefault();const c=activeCard(),v=normalize(el('answerInput').value);if(!v){setFeedback('先试着回忆并输入答案。','no');return;}c.attempts++;if(v===normalize(c.word)){c.correct++;c.correctStreak++;state.streak++;state.today++;c.interval=c.correctStreak===1?1:c.correctStreak===2?3:7;c.due=Date.now()+c.interval*86400000;setFeedback('✓ Correct · 已加入下一次间隔复习','ok');showReward();showStreak();save();renderStats();renderCollection();if(state.settings.autoSpeak)speakCard(c);}else{c.wrong++;c.correctStreak=0;c.due=Date.now();state.streak=0;showTranslation=true;el('translation').classList.remove('hidden');setFeedback('正确答案是 '+c.word+'。已收入错题本，稍后会再出现。','no');el('feedback').classList.add('shake');save();renderStats();renderCollection();}}
+    function parseWords(t){return String(t||'').split(/[\r\n,;\t]+/).map(x=>x.trim()).filter(x=>x&&/^[A-Za-z][A-Za-z' -]{0,80}$/.test(x)&&!/^(word|words|单词|vocabulary)$/i.test(x));} async function readImport(f){if(!f)return;try{let words=[];if(/\.(xlsx|xls)$/i.test(f.name)){if(!window.XLSX)throw new Error('Excel 组件仍在加载，请稍后重试。');const b=await f.arrayBuffer(),book=XLSX.read(b,{type:'array'}),rows=XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{header:1});words=rows.map(row=>row&&row[0]).filter(Boolean).map(String).filter(validWord).filter(w=>!/^(word|words|单词|vocabulary)$/i.test(w));}else words=parseWords(await f.text());const unique=[...new Set(words.map(x=>x.trim()).filter(Boolean))],existing=unique.filter(w=>state.cards.some(c=>normalize(c.word)===normalize(w))).length;pendingImport=unique.filter(w=>!state.cards.some(c=>normalize(c.word)===normalize(w)));const p=el('importPreview');p.innerHTML='识别 <b>'+unique.length+'</b> 个词 · 新增 <b>'+pendingImport.length+'</b> · 重复 '+existing+'<br><span lang="en">'+pendingImport.slice(0,10).join(' · ')+'</span>';p.classList.add('show');el('confirmImportBtn').hidden=!pendingImport.length;}catch(error){pendingImport=[];el('importPreview').textContent='无法读取文件：'+error.message;el('importPreview').classList.add('show');el('confirmImportBtn').hidden=true;}} function confirmImport(){if(!pendingImport.length)return;pendingImport.forEach(w=>createCard(w,''));save();render();el('importPreview').innerHTML='已导入 <b>'+pendingImport.length+'</b> 个词。建议先从其中 10 个开始。';pendingImport=[];el('confirmImportBtn').hidden=true;}
+    document.querySelectorAll('.tab').forEach(tab=>tab.onclick=()=>{selectedView=tab.dataset.view;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===tab));renderCollection();});el('generateBtn').onclick=generate;el('answerForm').onsubmit=checkAnswer;el('nextBtn').onclick=nextCard;el('audioBtn').onclick=()=>speakCard(activeCard());el('favoriteBtn').onclick=toggleFavorite;el('translationBtn').onclick=()=>{showTranslation=!showTranslation;el('translation').classList.toggle('hidden',!showTranslation);el('translationBtn').classList.toggle('fav',showTranslation);};el('fileInput').onchange=e=>readImport(e.target.files[0]);el('confirmImportBtn').onclick=confirmImport;el('typeSoundToggle').onchange=e=>{state.settings.typeSound=e.target.checked;save();};el('autoSpeakToggle').onchange=e=>{state.settings.autoSpeak=e.target.checked;save();};el('answerInput').addEventListener('keydown',e=>{if(e.key.length===1||e.key==='Backspace')typeClick(e.key==='Backspace');if(e.key.toLowerCase()==='r'&&!e.ctrlKey&&!e.metaKey&&e.target.value===''){e.preventDefault();speakCard(activeCard());}if(e.key.toLowerCase()==='n'&&!e.ctrlKey&&!e.metaKey&&e.target.value===''){e.preventDefault();nextCard();}});if(window.speechSynthesis)window.speechSynthesis.onvoiceschanged=()=>{};render();
+  </script>
+</body>
 </html>
