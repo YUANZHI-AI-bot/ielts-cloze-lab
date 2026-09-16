@@ -61,7 +61,7 @@ function validState(value) {
 
 async function passwordHash(passphrase, salt) {
   const material = await crypto.subtle.importKey("raw", encoder.encode(passphrase), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: fromB64url(salt), iterations: 210000 }, material, 256);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: fromB64url(salt), iterations: 100000 }, material, 256);
   return b64url(new Uint8Array(bits));
 }
 
