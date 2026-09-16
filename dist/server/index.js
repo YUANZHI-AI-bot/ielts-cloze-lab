@@ -174,6 +174,7 @@ export default {
     if (path.includes("..")) return new Response("Not found", { status: 404 });
     const asset = new URL(`https://yuanzhi-ai-bot.github.io/ielts-cloze-lab/${path}`);
     asset.search = url.search;
+    asset.searchParams.set("__sync_build", "2");
     return fetch(new Request(asset, request));
   },
 };
