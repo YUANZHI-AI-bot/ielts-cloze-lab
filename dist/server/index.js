@@ -166,6 +166,11 @@ export default {
       }
     }
     if (env.ASSETS) return env.ASSETS.fetch(request);
-    return new Response("Not found", { status: 404 });
+    if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405 });
+    const path = url.pathname === "/" ? "index.html" : url.pathname.replace(/^\/+/, "");
+    if (path.includes("..")) return new Response("Not found", { status: 404 });
+    const asset = new URL(`https://yuanzhi-ai-bot.github.io/ielts-cloze-lab/${path}`);
+    asset.search = url.search;
+    return fetch(new Request(asset, request));
   },
 };
