@@ -50,6 +50,12 @@ function validPassphrase(value) {
   return typeof value === "string" && value.length >= 10 && value.length <= 128;
 }
 
+function accountName(value) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  return /^[a-z][a-z0-9_.-]{2,31}$/.test(normalized) ? normalized : null;
+}
+
 function validState(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   try {
@@ -110,24 +116,36 @@ async function api(request, env) {
   if (url.pathname === "/api/v1/register" && request.method === "POST") {
     const body = await bodyOf(request, origin);
     if (body instanceof Response) return body;
+    const name = accountName(body.accountName);
+    if (!name) return error("同步帐号需为 3–32 位小写字母开头，可包含数字、点、下划线或连字符。", 400, origin);
     if (!validPassphrase(body.passphrase)) return error("同步口令需为 10–128 个字符。", 400, origin);
     if (!validState(body.state)) return error("词库数据无效或过大。", 400, origin);
     const id = randomId("vault_");
     const salt = randomId();
     const hash = await passwordHash(body.passphrase, salt);
     const now = Date.now();
-    await env.DB.prepare("INSERT INTO sync_vaults (id, password_hash, salt, state_json, revision, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)")
-      .bind(id, hash, salt, JSON.stringify(body.state), now, now).run();
-    return json({ vaultId: id, token: await tokenFor(id, env), state: body.state, revision: 1 }, 201, origin);
+    try {
+      await env.DB.prepare("INSERT INTO sync_vaults (id, account_name, password_hash, salt, state_json, revision, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)")
+        .bind(id, name, hash, salt, JSON.stringify(body.state), now, now).run();
+    } catch (cause) {
+      if (String(cause).includes("UNIQUE")) return error("这个同步帐号已被使用，请换一个。", 409, origin);
+      throw cause;
+    }
+    return json({ vaultId: id, accountName: name, token: await tokenFor(id, env), state: body.state, revision: 1 }, 201, origin);
   }
 
   if (url.pathname === "/api/v1/login" && request.method === "POST") {
     const body = await bodyOf(request, origin);
     if (body instanceof Response) return body;
-    if (typeof body.vaultId !== "string" || !validPassphrase(body.passphrase)) return error("同步 ID 或口令不正确。", 400, origin);
-    const row = await env.DB.prepare("SELECT password_hash, salt, state_json, revision, updated_at FROM sync_vaults WHERE id = ?").bind(body.vaultId).first();
-    if (!row || !same(await passwordHash(body.passphrase, row.salt), row.password_hash)) return error("同步 ID 或口令不正确。", 401, origin);
-    return json({ vaultId: body.vaultId, token: await tokenFor(body.vaultId, env), state: JSON.parse(row.state_json), revision: row.revision, updatedAt: row.updated_at }, 200, origin);
+    const name = accountName(body.accountName);
+    const legacyId = typeof body.vaultId === "string" && body.vaultId.startsWith("vault_") ? body.vaultId : null;
+    if ((!name && !legacyId) || !validPassphrase(body.passphrase)) return error("同步帐号或口令不正确。", 400, origin);
+    const row = await env.DB.prepare(name
+      ? "SELECT id, account_name, password_hash, salt, state_json, revision, updated_at FROM sync_vaults WHERE account_name = ?"
+      : "SELECT id, account_name, password_hash, salt, state_json, revision, updated_at FROM sync_vaults WHERE id = ?")
+      .bind(name || legacyId).first();
+    if (!row || !same(await passwordHash(body.passphrase, row.salt), row.password_hash)) return error("同步帐号或口令不正确。", 401, origin);
+    return json({ vaultId: row.id, accountName: row.account_name, token: await tokenFor(row.id, env), state: JSON.parse(row.state_json), revision: row.revision, updatedAt: row.updated_at }, 200, origin);
   }
 
   const id = await authenticatedId(request, env);
