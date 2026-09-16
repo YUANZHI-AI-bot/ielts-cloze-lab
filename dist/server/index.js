@@ -165,7 +165,10 @@ export default {
         return error("云端同步暂时不可用，请保留本地内容后稍后重试。", 503, request.headers.get("origin"));
       }
     }
-    if (env.ASSETS) return env.ASSETS.fetch(request);
+    if (env.ASSETS) {
+      const localAsset = await env.ASSETS.fetch(request);
+      if (localAsset.status !== 404) return localAsset;
+    }
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405 });
     const path = url.pathname === "/" ? "index.html" : url.pathname.replace(/^\/+/, "");
     if (path.includes("..")) return new Response("Not found", { status: 404 });
