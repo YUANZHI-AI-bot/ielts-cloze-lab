@@ -1,4 +1,46 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#070b16"><title>IELTS Cloze Lab · 拼写</title><link rel="stylesheet" href="styles.css"></head>
-<body data-page="practice"><main class="practice-shell"><header class="topbar"><a class="brand" href="index.html"><b>⌁</b><span>IELTS Cloze Lab</span></a><a class="back" href="index.html">← 返回词库</a></header><section class="practice-layout"><aside class="practice-side panel"><p class="eyebrow">ACTIVE RECALL</p><h1>拼写，而非选择。</h1><p>看中文提示和语境，在输入框里写出完整英文。按 <kbd>Enter</kbd> 核验。</p><div class="side-stat"><span>连续答对</span><b id="sideStreak">0</b></div><div class="side-stat"><span>待复习</span><b id="sideDue">0</b></div><div class="settings"><label><input id="typeSound" type="checkbox">机械键盘音效</label><label><input id="autoRead" type="checkbox" checked>答对后自然朗读</label></div></aside>
-<section class="practice-card panel" id="practiceCard" aria-live="polite"><div class="card-top"><div><span class="pill">第 <b id="progressNo">1</b> 题</span><span class="pill purple" id="topicPill">环境</span></div><button id="favoriteBtn" class="star" type="button" aria-label="收藏这个词">☆</button></div><div class="prompt"><p class="eyebrow">中文词义提示</p><strong id="glossHint">—</strong></div><p id="sentence" class="sentence" lang="en"></p><div class="translation-box"><p class="eyebrow">整句中文提示</p><p id="translation">—</p></div><form id="answerForm"><label for="answerInput">写出空缺的英文单词</label><div class="answer-row"><input id="answerInput" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="输入答案后按 Enter" autofocus><button class="primary" type="submit">核验 <kbd>Enter</kbd></button></div></form><p id="feedback" class="feedback" role="status"></p><footer class="card-footer"><button id="revealBtn" class="soft" type="button" hidden>查看答案</button><button id="audioBtn" class="soft" type="button" hidden>🔊 朗读单词与句子</button><button id="nextBtn" class="text-button" type="button">跳过 / 下一题 →</button><span id="voiceStatus">答对后解锁英文完整句与朗读</span></footer><div id="reward" class="reward" aria-hidden="true"><div></div><span>CORRECT</span></div></section></section></main><div class="toast" id="toast" role="status"></div><script src="app.js"></script></body></html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070b12">
+  <title>IELTS Cloze Lab · 拼写练习</title>
+  <link rel="stylesheet" href="styles.css?v=20260917b">
+  <script src="app.js?v=20260917d" defer></script>
+</head>
+<body data-page="practice">
+  <div class="noise" aria-hidden="true"></div>
+  <main class="practice-page">
+    <header class="practice-header">
+      <a class="brand" href="index.html"><span class="brand-mark">C</span><span><b>CLOZE LAB</b><small>ACTIVE RECALL</small></span></a>
+      <div class="practice-context"><span id="practiceChapter">加载中</span><b id="practiceUnit">—</b></div>
+      <div class="practice-actions"><button id="soundToggle" class="control-button" type="button" aria-pressed="true">⌨ 键盘音</button><a class="control-button" href="index.html">退出</a></div>
+    </header>
+    <section class="practice-progress" aria-label="练习进度"><div><span id="progressBar"></span></div><p><b id="questionNo">1</b> / <span id="questionTotal">20</span></p></section>
+    <section class="recall-layout">
+      <aside class="session-panel">
+        <p class="eyebrow">SESSION SIGNALS</p>
+        <div class="signal"><span>连续首答正确</span><b id="sessionStreak">0</b></div>
+        <div class="signal"><span>本组首答正确</span><b id="firstCorrect">0</b></div>
+        <div class="signal"><span>需要再练</span><b id="sessionWrong">0</b></div>
+        <div class="rule-card"><b>纠错规则</b><p>第一次拼错不显示答案；第二次再揭示，你需要亲手正确输入后才进入下一题。</p></div>
+      </aside>
+      <article class="recall-card" id="recallCard">
+        <div class="card-status"><span id="entrySource">原书词条</span><button id="favoriteBtn" class="favorite-button" type="button" aria-label="收藏这个词">☆</button></div>
+        <div class="meaning-block"><p class="eyebrow">中文提示 / MEANING</p><h1 id="meaning">—</h1><p id="wordLength" class="word-length">—</p></div>
+        <div class="hint-row"><button id="listenBtn" class="hint-button" type="button"><span>▶</span> 听发音</button><button id="ipaBtn" class="hint-button" type="button"><span>IPA</span> 显示音标</button><span id="ipaValue" class="ipa-value" hidden></span></div>
+        <form id="answerForm" class="answer-form"><label for="answerInput">输入完整英文拼写</label><div class="answer-line"><input id="answerInput" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="TYPE THE WORD" autofocus><button class="submit-button" type="submit">核验 <kbd>Enter</kbd></button></div></form>
+        <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+        <div class="card-bottom"><button id="skipBtn" class="text-button" type="button">不会，显示答案</button><span>按 Enter 核验并继续</span></div>
+        <div class="success-flare" id="successFlare" aria-hidden="true"><i></i><i></i><i></i><b>CORRECT</b></div>
+      </article>
+    </section>
+  </main>
+  <dialog id="summaryDialog" class="summary-dialog">
+    <p class="eyebrow">STUDY SET COMPLETE</p><h2>学习组完成</h2><p>完成不等于永久掌握。错词已进入本机复习队列。</p>
+    <div class="summary-grid"><div><span>首答正确</span><b id="summaryCorrect">0/20</b></div><div><span>需要重试</span><b id="summaryRetry">0</b></div><div><span>已揭示答案</span><b id="summaryReveal">0</b></div><div><span>收藏</span><b id="summaryFavorite">0</b></div></div>
+    <div class="summary-actions"><button id="retryWrongBtn" class="button secondary" type="button">复练错词</button><a id="nextUnitBtn" class="button primary" href="index.html">下一学习组 →</a></div>
+  </dialog>
+  <div class="toast" id="toast" role="status"></div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{
+  "sourceEntries": 3678,
+  "publishedEntries": 3672,
+  "excludedNoteRows": [
+    "ch07-0019",
+    "ch12-0116",
+    "ch15-0064",
+    "ch15-0097",
+    "ch16-0122",
+    "ch21-0312"
+  ],
+  "chapters": 22,
+  "units": 194,
+  "emptyHeadwords": [],
+  "headwordsContainingChinese": [],
+  "invalidHeadwords": [],
+  "unresolvedGlosses": [],
+  "duplicateIds": [],
+  "chapterCounts": {
+    "ch01": 241,
+    "ch02": 130,
+    "ch03": 168,
+    "ch04": 75,
+    "ch05": 401,
+    "ch06": 122,
+    "ch07": 78,
+    "ch08": 68,
+    "ch09": 176,
+    "ch10": 152,
+    "ch11": 113,
+    "ch12": 173,
+    "ch13": 133,
+    "ch14": 134,
+    "ch15": 149,
+    "ch16": 171,
+    "ch17": 117,
+    "ch18": 213,
+    "ch19": 121,
+    "ch20": 268,
+    "ch21": 417,
+    "ch22": 52
+  }
+}
